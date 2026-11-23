@@ -1,0 +1,24 @@
+{
+  "name": "profile-audit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Audit your LinkedIn profile against clear, explainable rules, in a browser extension.",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:ext": "bun run --cwd apps/extension dev",
+    "dev:ext:firefox": "bun run --cwd apps/extension dev:firefox",
+    "build:ext": "bun run --cwd apps/extension build:all",
+    "typecheck": "bun run --filter '*' typecheck",
+    "test": "bun test",
+    "check": "bun run typecheck && bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.4",
+    "typescript": "^7.0.2"
+  }
+}

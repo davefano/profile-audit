@@ -1,0 +1,17 @@
+{
+  "name": "@profile-audit/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts",
+    "./linkedin": "./src/linkedin/index.ts",
+    "./audit": "./src/audit/index.ts",
+    "./test/fixtures": "./test/fixtures.ts",
+    "./test/source-files": "./test/source-files.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p ."
+  }
+}

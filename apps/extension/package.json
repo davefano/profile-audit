@@ -1,0 +1,25 @@
+{
+  "name": "@profile-audit/extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "build:safari": "wxt build -b safari",
+    "build:all": "wxt build && wxt build -b firefox && wxt build -b safari",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox",
+    "typecheck": "tsc -p .",
+    "postinstall": "wxt prepare"
+  },
+  "dependencies": {
+    "@profile-audit/core": "workspace:*"
+  },
+  "devDependencies": {
+    "wxt": "^0.21.5"
+  }
+}

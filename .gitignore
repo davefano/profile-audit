@@ -1,0 +1,17 @@
+node_modules/
+.data/
+dist/
+coverage/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.output/
+.wxt/
+web-ext.config.ts
+
+# Compound Engineering local scratch
+.context/compound-engineering/
