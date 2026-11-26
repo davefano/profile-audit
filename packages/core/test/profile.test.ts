@@ -89,6 +89,20 @@ describe('extractProfileFacts', () => {
     expect(f.sections).toEqual({ certifications: 2, projects: 0, volunteering: 0, honors: 0, organizations: 0, languages: 0, courses: 0, publications: 0 });
   });
 
+  test('reads Featured, received recommendations and endorsements from the profile cards', () => {
+    const f = extractProfileFacts(fakeSnapshot({ featured: true, recommendations: { received: 2, given: 3 }, endorsements: [6, 2, 1] }), NOW);
+    expect(f).toMatchObject({ featured: true, recommendationsReceived: 2, endorsements: 9 });
+    const none = extractProfileFacts(fakeSnapshot({ featured: null, recommendations: null, endorsements: null }), NOW);
+    expect(none).toMatchObject({ featured: null, recommendationsReceived: null, endorsements: null });
+  });
+
+  test('skips Position entities that are bare references', () => {
+    const snap = fakeSnapshot();
+    const inc = (snap.payloads.fullProfile as { included: Record<string, unknown>[] }).included;
+    inc.push({ $type: 'com.linkedin.voyager.dash.identity.profile.Position', entityUrn: `urn:li:fsd_profilePosition:(${snap.profileId},99)` });
+    expect(extractProfileFacts(snap, NOW).positions.map((p) => p.title)).toEqual(['Software Engineer']);
+  });
+
   test('counts every skill from the collection total, not just the ones in the payload', () => {
     expect(extractProfileFacts(fakeSnapshot({ skills: 20, skillsTotal: 39 }), NOW).skillCount).toBe(39);
     expect(extractProfileFacts(fakeSnapshot({ skills: 4 }), NOW).skillCount).toBe(4);
@@ -137,6 +151,9 @@ test('captureProfile makes the expected requests and assembles a snapshot', asyn
     if (url.includes('followingStates')) return json(p.followingState);
     if (url.includes('ProfileVerificationDetailsDialog')) return new Response(p.about);
     if (url.includes('profileCardsActivity')) return new Response(p.activity);
+    if (url.includes('profileCardsAboveActivity')) return new Response(p.aboveActivityCard);
+    if (url.includes('profileCardsBelowActivityPart2')) return new Response(p.recommendationsCard);
+    if (url.includes('profileCardsBelowActivityPart7')) return new Response(p.skillsCard);
     if (url.startsWith('/in/'))
       return new Response(
         // Real markup splits the number from the word.
@@ -149,6 +166,6 @@ test('captureProfile makes the expected requests and assembles a snapshot', asyn
   expect(snap.errors).toEqual({});
   expect(snap.profileId).toBe(fixture.profileId);
   expect(snap.payloads.profilePageCounts).toEqual(['300 followers', '500+ connections']);
-  expect(calls).toHaveLength(6);
+  expect(calls).toHaveLength(9);
   expect(extractProfileFacts(snap, NOW).memberId).toBe(700_000_001);
 });

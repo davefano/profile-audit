@@ -1,8 +1,8 @@
 // Captures a RawSnapshot (the raw payloads) for one profile. Signed in, so it
-// must run in a www.linkedin.com page context. Makes 6 requests; keep usage to
+// must run in a www.linkedin.com page context. Makes 9 requests; keep usage to
 // one profile at a time. Turn it into facts with extractProfileFacts().
 
-import { activityRequest, aboutRequest, endpoints } from '../endpoints';
+import { aboutRequest, endpoints, profileCardRequest } from '../endpoints';
 import { errorText } from '../errors';
 import { profileIdFromUrn } from '../ids';
 import { sessionFrom, type ReaderOptions } from '../session';
@@ -49,7 +49,10 @@ export async function captureProfile(slug: string, opts: CaptureOptions = {}): P
   } else {
     snap.errors.followingState = snap.errors.about = 'no profileId';
   }
-  if (opts.includeActivity !== false) await attempt('activity', () => s.rsc(activityRequest(slug)));
+  if (opts.includeActivity !== false) await attempt('activity', () => s.rsc(profileCardRequest('activity', slug)));
+  await attempt('aboveActivityCard', () => s.rsc(profileCardRequest('aboveActivity', slug)));
+  await attempt('recommendationsCard', () => s.rsc(profileCardRequest('recommendations', slug)));
+  await attempt('skillsCard', () => s.rsc(profileCardRequest('skills', slug)));
 
   return snap;
 }

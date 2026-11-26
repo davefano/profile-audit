@@ -21,7 +21,7 @@ export const SECTION_LABELS: Record<Section, string> = {
  * Parts of a capture a rule depends on. If a part failed to load, the rule is
  * "not checked": a failed request is never reported as a weak profile.
  */
-export type Part = 'profile' | 'about' | 'connections' | 'activity';
+export type Part = 'profile' | 'about' | 'connections' | 'activity' | 'featured' | 'recommendations';
 
 /** What a rule found. `null` from a check means the rule doesn't apply to this profile. */
 export interface Check {
@@ -64,7 +64,7 @@ export interface Finding {
 export interface AuditReport {
   /** 0–100: passed weight over checked weight, core rules only. Null when nothing could be checked. */
   score: number | null;
-  /** `standout`: a strong score and every checked bonus rule passes. */
+  /** `standout`: a score of 90+ and every bonus rule passes. */
   level: 'standout' | 'strong' | 'good' | 'needs_work' | null;
   findings: Finding[];
 }

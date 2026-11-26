@@ -18,6 +18,12 @@ export interface RawSnapshot {
     about?: string;
     /** RSC flight text of the profile Activity card. */
     activity?: string;
+    /** RSC flight text of the cards above Activity: About and Featured. */
+    aboveActivityCard?: string;
+    /** RSC flight text of the Recommendations card. */
+    recommendationsCard?: string;
+    /** RSC flight text of the Skills card, with endorsement counts. */
+    skillsCard?: string;
     /** Count phrases found in the profile page HTML, e.g. ["500+ connections"]. */
     profilePageCounts?: string[];
     /**

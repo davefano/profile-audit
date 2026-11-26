@@ -14,7 +14,7 @@ The score is the passed weight over the checked weight of these rules.
 | `photo.present` | There is a profile photo | 3 |
 | `photo.banner` | The background isn't LinkedIn's default | 2 |
 | `headline.present` | There is a headline | 3 |
-| `headline.length` | It uses at least 180 of its 220 characters | 2 |
+| `headline.length` | It uses at least 160 of its 220 characters | 2 |
 | `headline.no_asks` | It doesn't ask for a job ("aspiring", "seeking", "looking for", "open to work"…) | 2 |
 | `about.present` | There is an About section | 3 |
 | `about.metrics_up_front` | A number appears in its first three lines, before "see more" | 2 |
@@ -38,8 +38,5 @@ that scores 90 or more and passes every bonus rule is a standout profile.
 | Rule | Passes when |
 |---|---|
 | `extras.sections` | It lists projects, certifications, languages and volunteering |
-
-Planned bonus rules, once the extension can read the data:
-
-- Recommendations or endorsements.
-- Featured content: articles, posts, links or media.
+| `extras.recommendations` | It has a recommendation from someone else, or an endorsement |
+| `extras.featured` | It has a Featured section: articles, posts, links or media |

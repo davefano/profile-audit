@@ -56,6 +56,12 @@ export interface FakeProfile {
   connections?: string | null;
   followers?: number | null;
   postTimes?: number[] | null;
+  /** Whether the Featured card shows; null drops the cards-above-Activity payload. */
+  featured?: boolean | null;
+  /** Recommendations received and given; null drops the Recommendations card. */
+  recommendations?: { received: number; given?: number } | null;
+  /** Endorsement count per skill shown on the Skills card; null drops the card. */
+  endorsements?: number[] | null;
   capturedAt?: number;
 }
 
@@ -182,6 +188,21 @@ export function fakeSnapshot(p: FakeProfile = {}): RawSnapshot {
         '\n' +
         postTimes.map((t, i) => `${(100 + i).toString(16)}:{"urn":"urn:li:activity:${postIdAt(t)}"}`).join('\n');
 
+  const first = p.firstName ?? 'Jordan';
+  const aboveActivityCard =
+    p.featured === null ? undefined : rsc(['About', 'I build reliable systems.', ...(p.featured ? ['Featured', 'How we cut checkout latency', 'Article'] : [])]);
+  const recs = p.recommendations ?? { received: 0 };
+  const recommendationsCard =
+    p.recommendations === null
+      ? undefined
+      : rsc([
+          ...(recs.received || recs.given ? ['Recommendations'] : []),
+          ...Array.from({ length: recs.received }, (_, i) => [`Engineering Manager ${i}`, `March ${i + 1}, 2024, Casey managed ${first} directly`, 'Great engineer.']).flat(),
+          ...Array.from({ length: recs.given ?? 0 }, (_, i) => [`Engineer ${i}`, `April ${i + 1}, 2024, ${first} worked with Riley on the same team`, 'Great teammate.']).flat(),
+        ]);
+  const skillsCard =
+    p.endorsements === null ? undefined : rsc((p.endorsements ?? []).flatMap((n, i) => [`Skill ${i}`, `${n} endorsement${n === 1 ? '' : 's'}`]));
+
   const connections = p.connections === undefined ? '500+ connections' : p.connections;
   return {
     schema: 1,
@@ -194,6 +215,9 @@ export function fakeSnapshot(p: FakeProfile = {}): RawSnapshot {
       followingState: p.followers === null ? undefined : { data: { followerCount: p.followers ?? 300 } },
       about,
       activity,
+      aboveActivityCard,
+      recommendationsCard,
+      skillsCard,
       profilePageCounts: connections ? [connections] : [],
     },
     errors: {},

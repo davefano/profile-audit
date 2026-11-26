@@ -30,6 +30,9 @@ const STRONG: FakeProfile = {
   volunteering: 1,
   verifications: [['Identity', 'Verified by LinkedIn in April 2026']],
   postTimes: [NOW - 10 * DAY],
+  featured: true,
+  recommendations: { received: 2 },
+  endorsements: [6, 2],
 };
 
 const audit = (p: FakeProfile, edit?: (s: ReturnType<typeof fakeSnapshot>) => void) => {
@@ -58,7 +61,7 @@ describe('auditProfile', () => {
     const r = audit({ summary: null, photoUploadedAt: null, postTimes: [], connections: '42 connections' });
     const improve = r.findings.filter((f) => f.status === 'improve').map((f) => f.id);
     expect(improve).toEqual(
-      expect.arrayContaining(['basics.custom_url', 'photo.present', 'photo.banner', 'headline.not_default', 'headline.length', 'about.present', 'experience.descriptions', 'experience.company_pages', 'skills.count', 'activity.recent', 'network.connections', 'extras.sections']),
+      expect.arrayContaining(['basics.custom_url', 'photo.present', 'photo.banner', 'headline.not_default', 'headline.length', 'about.present', 'experience.descriptions', 'experience.company_pages', 'skills.count', 'activity.recent', 'network.connections', 'extras.sections', 'extras.recommendations', 'extras.featured']),
     );
     for (const f of r.findings.filter((f) => f.status === 'improve')) expect(f.tip).toBeTruthy();
     expect(r.level).toBe('needs_work');
@@ -131,6 +134,18 @@ describe('auditProfile', () => {
   test('skills count the full total, not the subset in the payload', () => {
     expect(status(audit({ ...STRONG, skills: 20, skillsTotal: 34 }), 'skills.count')).toBe('pass');
     expect(status(audit({ ...STRONG, skills: 20, skillsTotal: 25 }), 'skills.count')).toBe('improve');
+  });
+
+  test('recommendations or endorsements, either one, pass the bonus', () => {
+    expect(status(audit({ ...STRONG, recommendations: { received: 0, given: 3 }, endorsements: [] }), 'extras.recommendations')).toBe('improve');
+    expect(status(audit({ ...STRONG, recommendations: { received: 0 }, endorsements: [1] }), 'extras.recommendations')).toBe('pass');
+    expect(status(audit({ ...STRONG, recommendations: null }), 'extras.recommendations')).toBe('not_checked');
+  });
+
+  test('no Featured section keeps a strong profile from standing out', () => {
+    const r = audit({ ...STRONG, featured: false });
+    expect(status(r, 'extras.featured')).toBe('improve');
+    expect(r.level).toBe('strong');
   });
 
   test('activity must be within 30 days', () => {

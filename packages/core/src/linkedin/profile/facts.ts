@@ -79,6 +79,12 @@ export interface ProfileFacts {
     verifications: string[];
   } | null;
   activity: { postCount: number; newestAt: number | null; oldestAt: number | null } | null;
+  /** Whether the profile has a Featured section. Null when its card didn't load. */
+  featured: boolean | null;
+  /** Recommendations others wrote for this member, as many as the card shows. Null when it didn't load. */
+  recommendationsReceived: number | null;
+  /** Endorsements summed over the skills the Skills card shows. Null when it didn't load. */
+  endorsements: number | null;
 }
 
 export interface Sections {
@@ -179,7 +185,8 @@ function parseFullProfile(json: unknown, want: { profileId: string | null; slug:
     photo: imageInfo(p.profilePicture),
     photoUrl: imageUrl(p.profilePicture),
     background: imageInfo(p.backgroundPicture),
-    positions: byType('.identity.profile.Position').map((x) => ({
+    // Some Position entities are bare references (an entityUrn and nothing else); they aren't roles.
+    positions: byType('.identity.profile.Position').filter((x) => x.title || x.companyName || x.dateRange).map((x) => ({
       title: str(x.title),
       company: str(x.companyName),
       companyId: Number(String(x.companyUrn ?? '').match(/fsd_company:(\d+)$/)?.[1]) || null,
@@ -251,6 +258,28 @@ export function parseActivity(rsc: string) {
   };
 }
 
+// The profile cards are UI text in the viewer's language; these read the English copy.
+
+/** The cards above Activity show a "Featured" heading when the member has featured items. */
+export const parseFeatured = (rsc: string) => rscTexts(rsc).includes('Featured');
+
+/**
+ * Received recommendations. Each one carries a line like "February 15, 2024,
+ * Casey worked with Jordan but on different teams"; the card lists given ones
+ * too ("…, Jordan worked with Casey…"), which start with the member's name.
+ */
+export function parseRecommendationsReceived(rsc: string, firstName: string | null): number {
+  const lines = rscTexts(rsc)
+    .map((t) => /^[A-Z][a-z]+ \d{1,2}, \d{4}, (.+)$/.exec(t)?.[1])
+    .filter((x): x is string => !!x);
+  return firstName ? lines.filter((l) => !l.startsWith(`${firstName} `)).length : lines.length;
+}
+
+/** "6 endorsements", "1 endorsement" lines in the Skills card, summed. */
+export function parseEndorsements(rsc: string): number {
+  return rscTexts(rsc).reduce((n, t) => n + Number(/^(\d[\d,]*) endorsements?$/.exec(t)?.[1]?.replace(/,/g, '') ?? 0), 0);
+}
+
 /** "Avery and Quinn are mutual connections" → 2; "A, B, and 12 other mutual connections" → 14. */
 export function parseMutual(text: string | null | undefined): number | null {
   if (!text) return null;
@@ -320,5 +349,9 @@ export function extractProfileFacts(snap: RawSnapshot, now = Date.now()): Profil
     joined,
     about: about && { contactInfoUpdated: about.contactInfoUpdated, photoUpdated: about.photoUpdated, verifications: about.verifications },
     activity: activity && { postCount: activity.postCount, newestAt: activity.newestAt, oldestAt: activity.oldestAt },
+    featured: snap.payloads.aboveActivityCard != null ? parseFeatured(snap.payloads.aboveActivityCard) : null,
+    recommendationsReceived:
+      snap.payloads.recommendationsCard != null ? parseRecommendationsReceived(snap.payloads.recommendationsCard, full?.firstName ?? null) : null,
+    endorsements: snap.payloads.skillsCard != null ? parseEndorsements(snap.payloads.skillsCard) : null,
   };
 }

@@ -61,16 +61,18 @@ A rule is `{ id, section, weight, bonus?, title, needs, check }`:
   doesn't apply (no headline means no headline-length rule).
 - `weight` is 1 (nice to have), 2 (matters) or 3 (fundamental).
 - `bonus: true` keeps a rule out of the score. The level is `standout` when the
-  score is 90 or more and every checked bonus rule passes.
+  score is 90 or more and every bonus rule passes (one that wasn't checked
+  counts as not passed).
 - `id` is stable once shipped: saved audits and AI suggestions key on it.
 
 To add a rule, add it to `RULES` and a case to `packages/core/test/audit.test.ts`;
 the complete-profile test must still pass every rule.
 
-Data the audit can't see yet: Featured, recommendations, endorsements,
-open-to-work, custom-button and contact info are not in the profile payload we
-read. Activity is the profile's Activity card, which may not include comments
-and reactions.
+Featured, recommendations and endorsements come from the profile cards
+(`PROFILE_CARDS` in `endpoints.ts`): server-rendered UI in the viewer's
+language, read by their English headings. Not read yet: open-to-work, the
+custom button and contact info. Activity is the profile's Activity card, which
+may not include comments and reactions.
 
 The profile payload's `summary` has its line breaks removed (role descriptions
 keep theirs), so the About rules read a sentence end followed by a capital

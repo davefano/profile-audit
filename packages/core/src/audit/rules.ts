@@ -16,7 +16,7 @@ export const HEADLINE_MAX = 220;
 export const ABOUT_MAX = 2600;
 
 /** Rules of thumb. */
-export const HEADLINE_FULL = 180;
+export const HEADLINE_FULL = 160;
 export const SKILLS_MIN = 30;
 export const CONNECTIONS_MIN = 500;
 export const ACTIVITY_DAYS = 30;
@@ -437,5 +437,36 @@ export const RULES: Rule[] = [
           )
         : pass(`You list ${have.join(', ')}.`);
     },
+  },
+  {
+    id: 'extras.recommendations',
+    section: 'extras',
+    weight: 1,
+    bonus: true,
+    title: 'Recommendations or endorsements',
+    needs: ['recommendations'],
+    check: (f) => {
+      const recs = f.recommendationsReceived!;
+      const ends = f.endorsements!;
+      const have = [recs && plural(recs, 'recommendation'), ends && plural(ends, 'endorsement')].filter(Boolean);
+      return have.length
+        ? pass(`You have ${have.join(' and ')}.`)
+        : improve(
+            'No recommendations or endorsements show.',
+            'Ask a former manager or colleague for a short recommendation about a result you delivered together. You don\'t need one for a good profile.',
+          );
+    },
+  },
+  {
+    id: 'extras.featured',
+    section: 'extras',
+    weight: 1,
+    bonus: true,
+    title: 'Featured content',
+    needs: ['featured'],
+    check: (f) =>
+      f.featured
+        ? pass('You have a Featured section.')
+        : improve('There is no Featured section.', 'Feature an article, a post, a talk or a project link at the top of your profile; it shows your work instead of describing it.'),
   },
 ];

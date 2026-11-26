@@ -23,7 +23,6 @@ export const endpoints = {
 };
 
 const ABOUT_SCREEN = 'com.linkedin.sdui.flagshipnav.trustverifications.ProfileVerificationDetailsDialog';
-const ACTIVITY_COMPONENT = 'com.linkedin.sdui.generated.profile.dsl.impl.profileCardsActivity';
 
 /** "About this member" dialog: join date, verifications, recent photo/contact changes. */
 export function aboutRequest(profileId: string, slug: string) {
@@ -49,12 +48,26 @@ export function aboutRequest(profileId: string, slug: string) {
   };
 }
 
-/** Profile "Activity" card: recent post IDs (which encode timestamps) and follower count. */
-export function activityRequest(slug: string) {
+/**
+ * Profile cards, each a server-rendered component. The parts below Activity
+ * hold fixed section types: Part2 is Recommendations, Part7 is Skills with
+ * their endorsement counts (checked on two profiles, 2026-11-26).
+ */
+export const PROFILE_CARDS = {
+  /** Recent post IDs (which encode timestamps) and the follower count. */
+  activity: 'profileCardsActivity',
+  /** About and Featured. */
+  aboveActivity: 'profileCardsAboveActivity',
+  recommendations: 'profileCardsBelowActivityPart2',
+  skills: 'profileCardsBelowActivityPart7',
+} as const;
+
+export function profileCardRequest(card: keyof typeof PROFILE_CARDS, slug: string) {
+  const id = `com.linkedin.sdui.generated.profile.dsl.impl.${PROFILE_CARDS[card]}`;
   return {
-    url: `/flagship-web/rsc-action/actions/component?componentId=${ACTIVITY_COMPONENT}&sduiid=${ACTIVITY_COMPONENT}`,
+    url: `/flagship-web/rsc-action/actions/component?componentId=${id}&sduiid=${id}`,
     body: {
-      componentId: ACTIVITY_COMPONENT,
+      componentId: id,
       clientArguments: {
         payload: { isSelfView: false, vanityName: slug },
         states: [],
