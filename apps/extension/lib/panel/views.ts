@@ -8,9 +8,9 @@ import { ago, esc, plural } from './format';
 
 type Level = NonNullable<AuditReport['level']>;
 
-const TITLE: Record<Level, string> = { strong: 'Strong profile', good: 'Good, with room to grow', needs_work: 'Needs work' };
+const TITLE: Record<Level, string> = { standout: 'Standout profile', strong: 'Strong profile', good: 'Good, with room to grow', needs_work: 'Needs work' };
 /** The palette token each level is drawn in. */
-const TONE: Record<Level, string> = { strong: 'ok', good: 'accent', needs_work: 'warn' };
+const TONE: Record<Level, string> = { standout: 'ok', strong: 'ok', good: 'accent', needs_work: 'warn' };
 
 function identity(r: AuditResult) {
   const name = r.name ?? r.slug;
@@ -24,13 +24,15 @@ function identity(r: AuditResult) {
   </article>`;
 }
 
-function assessment({ score, level }: AuditReport, improve: Finding[], notChecked: Finding[]) {
+function assessment({ score, level }: AuditReport, improve: Finding[], bonusLeft: Finding[], notChecked: Finding[]) {
   const tone = level ? TONE[level] : 'text3';
-  const lead = level
-    ? improve.length
+  const lead = !level
+    ? "None of the rules could be checked, because the profile didn't load."
+    : improve.length
       ? `${plural(improve.length, 'suggestion')}, most important first.`
-      : 'Every rule that could be checked passes.'
-    : "None of the rules could be checked, because the profile didn't load.";
+      : bonusLeft.length
+        ? 'Every core rule passes. The bonus items below would make it stand out.'
+        : 'Every rule that could be checked passes, bonus items included.';
   const skipped = level && notChecked.length ? ` ${plural(notChecked.length, 'rule')} couldn't be checked and don't count.` : '';
   return `<section class="lvl" style="--c: var(--${tone})">
     <canvas class="wash" data-c="${tone}" aria-hidden="true"></canvas>
@@ -50,18 +52,20 @@ function balance({ score, level }: AuditReport, passed: number, checked: number)
   return `<div class="bal">${row('Score', `${score}/100`, score / 100, TONE[level])}${row('Rules passed', `${passed} of ${checked}`, passed / checked, 'ok')}</div>`;
 }
 
-function heading(title: string, count?: number) {
+function heading(title: string, count?: number | string) {
   return `<h3>${esc(title)}<span class="rule" aria-hidden="true"></span><small>${count ?? ''}</small></h3>`;
 }
 
-function item(f: Finding, mark: string) {
+/** ✓ passes, ↑ a suggestion, + a bonus still to add. */
+function item(f: Finding) {
+  const mark = f.status === 'pass' ? '✓' : f.bonus ? '+' : '↑';
   const tip = f.status === 'improve' && f.tip ? `<span class="tip">${esc(f.tip)}</span>` : '';
-  return `<li class="${f.weight >= 3 ? 'major' : ''}"><span class="mk" aria-hidden="true">${mark}</span><span class="t">${esc(f.title)}<span class="why">${esc(f.detail)}</span></span><span class="str">${esc(SECTION_LABELS[f.section])}</span>${tip}</li>`;
+  return `<li class="${f.status}${f.weight >= 3 ? ' major' : ''}"><span class="mk" aria-hidden="true">${mark}</span><span class="t">${esc(f.title)}<span class="why">${esc(f.detail)}</span></span><span class="str">${esc(SECTION_LABELS[f.section])}</span>${tip}</li>`;
 }
 
-function list(cls: string, title: string, mark: string, items: Finding[], none: string) {
-  return `<section class="col ${cls}">${heading(title, items.length)}${
-    items.length ? `<ul>${items.map((f) => item(f, mark)).join('')}</ul>` : `<p class="none">${none}</p>`
+function list(cls: string, title: string, items: Finding[], none: string, count: number | string = items.length) {
+  return `<section class="col ${cls}">${heading(title, count)}${
+    items.length ? `<ul>${items.map(item).join('')}</ul>` : `<p class="none">${none}</p>`
   }</section>`;
 }
 
@@ -78,14 +82,18 @@ function readNotes(errors: Record<string, string>) {
 
 export function renderResult(r: AuditResult): string {
   const { findings } = r.report;
-  const improve = findings.filter((f) => f.status === 'improve').sort((a, b) => b.weight - a.weight);
-  const passed = findings.filter((f) => f.status === 'pass');
+  const core = findings.filter((f) => !f.bonus);
+  const improve = core.filter((f) => f.status === 'improve').sort((a, b) => b.weight - a.weight);
+  const passed = core.filter((f) => f.status === 'pass');
+  const bonus = findings.filter((f) => f.bonus && f.status !== 'not_checked').sort((a, b) => (a.status === 'pass' ? 1 : 0) - (b.status === 'pass' ? 1 : 0));
+  const bonusLeft = bonus.filter((f) => f.status === 'improve');
   const notChecked = findings.filter((f) => f.status === 'not_checked');
   return `${identity(r)}
-  ${assessment(r.report, improve, notChecked)}
+  ${assessment(r.report, improve, bonusLeft, notChecked)}
   ${balance(r.report, passed.length, passed.length + improve.length)}
-  ${list('improve', 'Suggestions', '↑', improve, 'Nothing to improve on the rules that could be checked')}
-  ${list('pass', 'Looks good', '✓', passed, 'No rule passes yet')}
+  ${list('improve', 'Suggestions', improve, 'Nothing to improve on the rules that could be checked')}
+  ${bonus.length ? list('bonus', 'Bonus', bonus, '', `${bonus.length - bonusLeft.length} of ${bonus.length}`) : ''}
+  ${list('pass', 'Looks good', passed, 'No rule passes yet')}
   ${notCheckedLine(notChecked)}
   ${readNotes(r.errors)}
   <p class="foot"><span>Read ${ago(r.capturedAt)} · rules of thumb, not LinkedIn requirements</span></p>`;

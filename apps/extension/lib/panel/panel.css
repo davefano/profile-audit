@@ -134,8 +134,9 @@ main { padding: 20px var(--gutter) 24px; overflow-x: hidden; }
 }
 .col li:first-child { border-top: 0; }
 .col .mk { font-size: 13px; font-weight: 600; line-height: 1.5; }
-.improve .mk { color: var(--warn); }
-.pass .mk { color: var(--ok); }
+.col li.improve .mk { color: var(--warn); }
+.col li.pass .mk { color: var(--ok); }
+.bonus li.improve .mk { color: var(--accent); }
 .col li.major .t { font-weight: 600; }
 .col .t { min-width: 0; overflow-wrap: anywhere; }
 .col .why { display: block; font-size: 12px; font-weight: 400; color: var(--text3); }

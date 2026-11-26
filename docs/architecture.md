@@ -49,9 +49,10 @@ const { facts } = await linkedin.profile(tab.profileSlug, { tab });
 
 `auditProfile(facts, now)` runs every rule in `RULES` (`rules.ts`) and returns
 an `AuditReport`: findings with a status (`pass`, `improve`, `not_checked`),
-a 0–100 score (passed weight over checked weight) and a level.
+a 0–100 score (passed weight over checked weight, core rules only) and a
+level. What the rules check, and why, is in [rubric.md](rubric.md).
 
-A rule is `{ id, section, weight, title, needs, check }`:
+A rule is `{ id, section, weight, bonus?, title, needs, check }`:
 
 - `needs` names the parts of the capture it reads (`profile`, `about`,
   `connections`, `activity`). If one failed to load, the rule is reported as
@@ -59,13 +60,21 @@ A rule is `{ id, section, weight, title, needs, check }`:
 - `check(facts, now)` returns `{ pass, detail, tip }`, or `null` when the rule
   doesn't apply (no headline means no headline-length rule).
 - `weight` is 1 (nice to have), 2 (matters) or 3 (fundamental).
+- `bonus: true` keeps a rule out of the score. The level is `standout` when the
+  score is 90 or more and every checked bonus rule passes.
 - `id` is stable once shipped: saved audits and AI suggestions key on it.
 
 To add a rule, add it to `RULES` and a case to `packages/core/test/audit.test.ts`;
 the complete-profile test must still pass every rule.
 
-Data the audit can't see yet: Featured, recommendations, open-to-work,
-custom-button and contact info are not in the profile payload we read.
+Data the audit can't see yet: Featured, recommendations, endorsements,
+open-to-work, custom-button and contact info are not in the profile payload we
+read. Activity is the profile's Activity card, which may not include comments
+and reactions.
+
+The profile payload's `summary` has its line breaks removed (role descriptions
+keep theirs), so the About rules read a sentence end followed by a capital
+letter as a break: `aboutLines()` in `rules.ts`.
 
 ## Planned: AI suggestions
 

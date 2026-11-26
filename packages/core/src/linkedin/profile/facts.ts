@@ -62,8 +62,10 @@ export interface ProfileFacts {
   educations: Education[];
   /** Skill names included in the profile payload (LinkedIn returns a subset). */
   skills: string[];
+  /** How many skills the profile lists in all: the collection's total, which counts past the subset above. */
+  skillCount: number;
   /** Entries in the optional sections, counted. All 0 when the profile record didn't load. */
-  sections: { certifications: number; projects: number; volunteering: number; honors: number; organizations: number };
+  sections: Sections;
   followers: number | null;
   connections: { count: number; capped: boolean } | null;
   /** Connections shared with whoever captured this. Relative to the viewer. */
@@ -78,6 +80,19 @@ export interface ProfileFacts {
   } | null;
   activity: { postCount: number; newestAt: number | null; oldestAt: number | null } | null;
 }
+
+export interface Sections {
+  certifications: number;
+  projects: number;
+  volunteering: number;
+  honors: number;
+  organizations: number;
+  languages: number;
+  courses: number;
+  publications: number;
+}
+
+const NO_SECTIONS: Sections = { certifications: 0, projects: 0, volunteering: 0, honors: 0, organizations: 0, languages: 0, courses: 0, publications: 0 };
 
 type Entity = Record<string, any>;
 
@@ -137,6 +152,13 @@ function parseFullProfile(json: unknown, want: { profileId: string | null; slug:
   const own = (e: Entity) => !String(e.entityUrn ?? '').includes('(') || (!!pid && String(e.entityUrn).includes(`(${pid},`));
   const byType = (suffix: string) => ofType(suffix).filter(own);
   const geo = byUrn.get(p.geoLocation?.geoUrn);
+  // The profile points at a collection per section (*profileSkills, …). Its paging
+  // total counts every entry, including ones the payload leaves out.
+  const count = (collection: string, suffix: string) => {
+    const total = byUrn.get(p[collection])?.paging?.total;
+    const included = byType(suffix).length;
+    return typeof total === 'number' ? Math.max(total, included) : included;
+  };
   return {
     profileId: profileIdFromUrn(p.entityUrn),
     memberId: memberIdFromUrn(p.objectUrn),
@@ -176,12 +198,16 @@ function parseFullProfile(json: unknown, want: { profileId: string | null; slug:
       end: ym(x.dateRange?.end),
     })),
     skills: byType('.identity.profile.Skill').map((x) => str(x.name)).filter((x): x is string => !!x),
+    skillCount: count('*profileSkills', '.identity.profile.Skill'),
     sections: {
-      certifications: byType('.identity.profile.Certification').length,
-      projects: byType('.identity.profile.Project').length,
-      volunteering: byType('.identity.profile.VolunteerExperience').length,
-      honors: byType('.identity.profile.Honor').length,
-      organizations: byType('.identity.profile.Organization').length,
+      certifications: count('*profileCertifications', '.identity.profile.Certification'),
+      projects: count('*profileProjects', '.identity.profile.Project'),
+      volunteering: count('*profileVolunteerExperiences', '.identity.profile.VolunteerExperience'),
+      honors: count('*profileHonors', '.identity.profile.Honor'),
+      organizations: count('*profileOrganizations', '.identity.profile.Organization'),
+      languages: count('*profileLanguages', '.identity.profile.Language'),
+      courses: count('*profileCourses', '.identity.profile.Course'),
+      publications: count('*profilePublications', '.identity.profile.Publication'),
     },
   };
 }
@@ -286,7 +312,8 @@ export function extractProfileFacts(snap: RawSnapshot, now = Date.now()): Profil
     positions: full?.positions ?? [],
     educations: full?.educations ?? [],
     skills: full?.skills ?? [],
-    sections: full?.sections ?? { certifications: 0, projects: 0, volunteering: 0, honors: 0, organizations: 0 },
+    skillCount: full?.skillCount ?? 0,
+    sections: full?.sections ?? NO_SECTIONS,
     followers: typeof followerState === 'number' ? followerState : (activity?.followers ?? pageFollowers),
     connections,
     mutualConnections: snap.payloads.profilePageMutualCount ?? null,

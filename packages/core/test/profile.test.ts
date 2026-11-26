@@ -86,7 +86,12 @@ describe('extractProfileFacts', () => {
     );
     expect(f.positions[0]).toMatchObject({ companyId: 42, description: 'Led the billing rewrite.' });
     expect(f.background).toEqual({ present: true, uploadedAt: 1_700_000_000_000 });
-    expect(f.sections).toEqual({ certifications: 2, projects: 0, volunteering: 0, honors: 0, organizations: 0 });
+    expect(f.sections).toEqual({ certifications: 2, projects: 0, volunteering: 0, honors: 0, organizations: 0, languages: 0, courses: 0, publications: 0 });
+  });
+
+  test('counts every skill from the collection total, not just the ones in the payload', () => {
+    expect(extractProfileFacts(fakeSnapshot({ skills: 20, skillsTotal: 39 }), NOW).skillCount).toBe(39);
+    expect(extractProfileFacts(fakeSnapshot({ skills: 4 }), NOW).skillCount).toBe(4);
   });
 
   test('falls back to a member-ID join estimate without the About payload', () => {

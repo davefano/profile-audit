@@ -41,10 +41,16 @@ export interface FakeProfile {
   /** Upload time of a custom background banner; none by default. */
   backgroundUploadedAt?: number | null;
   certifications?: number;
+  projects?: number;
+  languages?: number;
+  volunteering?: number;
   /** Unrelated profiles LinkedIn bundles in (recommenders, people also viewed), placed first. */
   strangers?: number;
   educations?: number;
+  /** Skills included in the payload. */
   skills?: number;
+  /** The skills collection's paging total, when the profile has more than the payload includes. */
+  skillsTotal?: number;
   joinedAt?: number | null;
   verifications?: Array<[string, string]>;
   connections?: string | null;
@@ -104,6 +110,7 @@ export function fakeSnapshot(p: FakeProfile = {}): RawSnapshot {
       geoLocation: { geoUrn: 'urn:li:fsd_geo:1' },
       industryUrn: 'urn:li:fsd_industry:4',
       profilePicture: photo,
+      ...(p.skillsTotal != null ? { '*profileSkills': 'urn:li:collectionResponse:skills' } : {}),
       ...(p.backgroundUploadedAt ? { backgroundPicture: image(`1584_396/profile-displaybackgroundimage-shrink_350_1400/0/${p.backgroundUploadedAt}?e=1&t=x`) } : {}),
     },
     { $type: 'com.linkedin.voyager.dash.common.Geo', entityUrn: 'urn:li:fsd_geo:1', defaultLocalizedName: 'Springfield, United States' },
@@ -130,11 +137,23 @@ export function fakeSnapshot(p: FakeProfile = {}): RawSnapshot {
       entityUrn: `urn:li:fsd_skill:(${profileId},${i})`,
       name: `Skill ${i}`,
     })),
-    ...Array.from({ length: p.certifications ?? 0 }, (_, i) => ({
-      $type: 'com.linkedin.voyager.dash.identity.profile.Certification',
-      entityUrn: `urn:li:fsd_profileCertification:(${profileId},${i})`,
-      name: `Certificate ${i}`,
-    })),
+    ...(p.skillsTotal != null
+      ? [{ $type: 'com.linkedin.restli.common.CollectionResponse', entityUrn: 'urn:li:collectionResponse:skills', paging: { start: 0, count: 20, total: p.skillsTotal } }]
+      : []),
+    ...(
+      [
+        ['Certification', p.certifications],
+        ['Project', p.projects],
+        ['Language', p.languages],
+        ['VolunteerExperience', p.volunteering],
+      ] as const
+    ).flatMap(([type, n]) =>
+      Array.from({ length: n ?? 0 }, (_, i) => ({
+        $type: `com.linkedin.voyager.dash.identity.profile.${type}`,
+        entityUrn: `urn:li:fsd_profile${type}:(${profileId},${i})`,
+        name: `${type} ${i}`,
+      })),
+    ),
   ];
 
   const joinedAt = p.joinedAt === undefined ? Date.UTC(2016, 2, 15) : p.joinedAt;

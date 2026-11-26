@@ -2,7 +2,7 @@
 
 import type { ProfileFacts } from '../linkedin/profile/facts';
 
-export type Section = 'basics' | 'photo' | 'headline' | 'about' | 'experience' | 'education' | 'skills' | 'activity' | 'network';
+export type Section = 'basics' | 'photo' | 'headline' | 'about' | 'experience' | 'education' | 'skills' | 'activity' | 'network' | 'extras';
 
 export const SECTION_LABELS: Record<Section, string> = {
   basics: 'Basics',
@@ -14,6 +14,7 @@ export const SECTION_LABELS: Record<Section, string> = {
   skills: 'Skills',
   activity: 'Activity',
   network: 'Network',
+  extras: 'Extra sections',
 };
 
 /**
@@ -37,6 +38,11 @@ export interface Rule {
   section: Section;
   /** 1 = nice to have, 2 = matters, 3 = fundamental. */
   weight: 1 | 2 | 3;
+  /**
+   * A bonus rule isn't needed for a good profile, so it stays out of the score.
+   * Passing every bonus rule on top of a strong score is what makes a standout profile.
+   */
+  bonus?: true;
   title: string;
   needs: Part[];
   check(facts: ProfileFacts, now: number): Check | null;
@@ -48,6 +54,7 @@ export interface Finding {
   id: string;
   section: Section;
   weight: number;
+  bonus: boolean;
   title: string;
   status: Status;
   detail: string;
@@ -55,8 +62,9 @@ export interface Finding {
 }
 
 export interface AuditReport {
-  /** 0–100: passed weight over checked weight. Null when nothing could be checked. */
+  /** 0–100: passed weight over checked weight, core rules only. Null when nothing could be checked. */
   score: number | null;
-  level: 'strong' | 'good' | 'needs_work' | null;
+  /** `standout`: a strong score and every checked bonus rule passes. */
+  level: 'standout' | 'strong' | 'good' | 'needs_work' | null;
   findings: Finding[];
 }
