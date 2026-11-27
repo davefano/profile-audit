@@ -8,8 +8,40 @@ profile with your own signed-in session, runs a set of deterministic rules
 (photo, headline, About, experience, skills, activity and more) and lists
 suggestions, most important first. Nothing is sent anywhere.
 
+What it checks, and why, is in [docs/rubric.md](docs/rubric.md). The rules
+are rules of thumb from reviewing profiles, not LinkedIn requirements.
+
 Planned: bring your own OpenRouter key to have an AI model draft a better
 headline, About section or role description from the audit.
+
+## Install
+
+Download the latest zip for your browser from
+[Releases](https://github.com/davefano/profile-audit/releases).
+
+- **Chrome:** unzip it, open `chrome://extensions`, turn on Developer mode,
+  click **Load unpacked** and pick the unzipped folder. To update, unzip the
+  new version over the same folder and click the reload icon on the extension.
+- **Firefox:** open `about:debugging` › This Firefox › **Load Temporary
+  Add-on** and pick the zip. It stays loaded until Firefox restarts.
+- **Safari:** needs a Mac with Xcode; see [Setup](#setup).
+
+Or build it yourself from source; see below.
+
+## Privacy
+
+The extension reads the profile in your active LinkedIn tab, using your own
+signed-in session, one profile at a time. It makes no changes on LinkedIn and
+has no server: the profile and the audit stay in your browser. Settings are
+kept in the browser's extension storage.
+
+Opening someone else's profile records a profile view, as it would without
+the extension.
+
+This is an independent project, not affiliated with or endorsed by LinkedIn.
+It reads LinkedIn's internal web endpoints, which are undocumented and can
+change without notice; when they do, parts of the audit show as "not checked"
+until the extension is updated.
 
 ## Project layout
 
@@ -53,6 +85,11 @@ on 23 November 2026. `N` starts at 0 each day. Don't zero-pad the month or day
 (`2026.3.5.0`, not `2026.03.05.0`): browsers reject version parts with leading
 zeros. WXT copies the version into every browser's manifest.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## License
 
-MIT.
+[MIT](LICENSE). The bundled Geist font (`apps/extension/lib/panel/fonts/`) is
+under the SIL Open Font License; see `OFL.txt` beside it.
