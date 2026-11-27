@@ -45,6 +45,14 @@ so `bun run dev:ext` can't drive Chrome.
 **Safari** needs a Mac with Xcode: build with `bun run --cwd apps/extension build:safari`,
 then wrap it with `xcrun safari-web-extension-converter apps/extension/.output/safari-mv2`.
 
+## Versions
+
+The extension's version, in `apps/extension/package.json`, is the release date
+plus a counter: `YEAR.MONTH.DAY.N`, e.g. `2026.11.23.1` for the second release
+on 23 November 2026. `N` starts at 0 each day. Don't zero-pad the month or day
+(`2026.3.5.0`, not `2026.03.05.0`): browsers reject version parts with leading
+zeros. WXT copies the version into every browser's manifest.
+
 ## License
 
 MIT.
